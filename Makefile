@@ -1,25 +1,25 @@
-run:
-	python -m uvicorn app.main:app --reload --port 8000
-
-install:
-	python -m pip install --upgrade pip && pip install -r requirements.txt
-
+.ONESHELL:
+.SHELLFLAGS := -o errexit -o pipefail -c
 .PHONY: run venv freeze
 
-# Run the FastAPI server
-run:
-	@source .venv/Scripts/activate && python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+# Adjust this if you move Python
+PY := "/c/Users/ellio/AppData/Local/Programs/Python/Python313/python.exe"
 
-# Create or refresh the virtual environment and install dependencies
+# Start the API and STAY running (exec ties the process to make)
+run:
+	source .venv/Scripts/activate
+	exec python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+
+# Create/refresh venv and install deps
 venv:
-	@"/c/Users/ellio/AppData/Local/Programs/Python/Python313/python.exe" -m venv .venv && \
-	source .venv/Scripts/activate && \
-	python -m pip install -U pip setuptools wheel && \
+	$(PY) -m venv .venv
+	source .venv/Scripts/activate
+	python -m pip install -U pip setuptools wheel
 	pip install -r requirements.txt
 
-# Freeze current environment into lockfile
+# Freeze lockfile
 freeze:
-	@source .venv/Scripts/activate && \
-	pip freeze > requirements-lock.txt && \
-	git add requirements-lock.txt && \
-	git commit -m "Update lockfile" || true
+	source .venv/Scripts/activate
+	pip freeze > requirements-lock.txt
+	git add requirements-lock.txt
+	- git commit -m "Update lockfile"
