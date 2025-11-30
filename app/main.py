@@ -1,34 +1,65 @@
-from fastapi import FastAPI
-from .routes import risk, alerts, approvals  # NOTE: overrides router intentionally NOT imported
 
-app = FastAPI(title="Fit API Scaffold")
-
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
-from starlette.responses import Response
-
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        resp: Response = await call_next(request)
-        resp.headers.setdefault("X-Content-Type-Options", "nosniff")
-        resp.headers.setdefault("X-Frame-Options", "DENY")
-        resp.headers.setdefault("Referrer-Policy", "no-referrer")
-        resp.headers.setdefault("Cross-Origin-Opener-Policy", "same-origin")
-        return resp
-
-app.add_middleware(SecurityHeadersMiddleware)
-
-
+from fastapi import FastAPI, Response
 import os
+
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import Response as StarletteResponse
+
+from .routes import risk, overrides, alerts, approvals
+
+
+app = FastAPI(title="Fit API Scaffold")
+
+
+# --- security headers middleware ---
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        resp: StarletteResponse = await call_next(request)
+        resp.headers["X-Content-Type-Options"] = "nosniff"
+        resp.headers["X-Frame-Options"] = "DENY"
+        resp.headers["Referrer-Policy"] = "no-referrer"
+        resp.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        return resp
+
+app.add_middleware(SecurityHeadersMiddleware)
+# --- end middleware ---
+
+
+@app.get("/health")
+def health():
+    return {"ok": True}
+
+@app.head("/health", include_in_schema=False)
+def health_head():
+    return Response(status_code=200)
+
+@app.get("/version")
+def version():
+    return {
+        "tag": os.getenv("APP_VERSION", "dev"),
+        "commit": os.getenv("APP_COMMIT", "local"),
+    }
+
+
+# static + favicon
 BASE_DIR = os.path.dirname(__file__)
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 
 @app.get("/favicon.ico", include_in_schema=False)
 def favicon():
     return FileResponse(os.path.join(BASE_DIR, "static", "favicon.ico"))
+
+
+# routers
+app.include_router(risk.router)
+app.include_router(overrides.router)
+app.include_router(alerts.router)
+app.include_router(approvals.router)
+
 
 # favicon (GET already exists above)
 
