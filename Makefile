@@ -8,6 +8,8 @@ PY := "/c/Users/ellio/AppData/Local/Programs/Python/Python313/python.exe"
 # Start the API and STAY running (exec ties the process to make)
 run:
 	source .venv/Scripts/activate
+	APP_VERSION="$$(git describe --tags --abbrev=0 2>/dev/null || echo dev)" \
+	APP_COMMIT="$$(git rev-parse --short HEAD)" \
 	exec python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 # Create/refresh venv and install deps
