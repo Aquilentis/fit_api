@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 .env
 .local/
+
+# runtime state
+app/overrides_store.json
