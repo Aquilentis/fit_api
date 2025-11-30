@@ -9,3 +9,6 @@ app/overrides_store.json
 
 # runtime state
 app/overrides_store.json
+
+# editor backups
+*.bak
